@@ -1,0 +1,190 @@
+-- ============================================================================
+-- MOBILBARÁT & PC INTEGRÁLT VIZUÁLIS MENÜ SCRIPT
+-- ============================================================================
+
+local Players = game:GetService("Players")
+local CoreGui = game:GetService("CoreGui")
+local UserInputService = game:GetService("UserInputService")
+local LocalPlayer = Players.LocalPlayer
+
+-- Alapértelmezett állapotok
+local fontChangerActive = true
+local visualUnlockActive = false
+local currentFont = Enum.Font.FredokaOne
+
+--------------------------------------------------------------------------------
+-- 1. BETŰTÍPUS VÁLTÓ LOGIKA
+--------------------------------------------------------------------------------
+local function applyFontToElement(element)
+	if not fontChangerActive then return end
+	if element:IsA("TextLabel") or element:IsA("TextButton") or element:IsA("TextBox") then
+		pcall(function()
+			element.Font = currentFont
+		end)
+	end
+end
+
+local function watchContainer(container)
+	for _, child in ipairs(container:GetDescendants()) do
+		applyFontToElement(child)
+	end
+	container.DescendantAdded:Connect(function(child)
+		applyFontToElement(child)
+	end)
+end
+
+if LocalPlayer then
+	local playerGui = LocalPlayer:WaitForChild("PlayerGui", 5)
+	if playerGui then watchContainer(playerGui) end
+end
+pcall(function() watchContainer(CoreGui) end)
+
+--------------------------------------------------------------------------------
+-- 2. GUI INTERFÉSZ LÉTREHOZÁSA (Mobil gombbal)
+--------------------------------------------------------------------------------
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "CustomMenuGUI"
+ScreenGui.ResetOnSpawn = false
+
+pcall(function()
+	ScreenGui.Parent = CoreGui
+end)
+if not ScreenGui.Parent then
+	ScreenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
+end
+
+-- Nyitó/Záró Lebegő Gomb Mobilra (Toggle Button)
+local ToggleBtn = Instance.new("TextButton")
+ToggleBtn.Name = "ToggleMenuBtn"
+ToggleBtn.Size = UDim2.new(0, 50, 0, 50)
+ToggleBtn.Position = UDim2.new(0, 20, 0.3, 0) -- Bal oldalon középtájt
+ToggleBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
+ToggleBtn.Text = "UI"
+ToggleBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+ToggleBtn.TextSize = 16
+ToggleBtn.Font = Enum.Font.FredokaOne
+ToggleBtn.Active = true
+ToggleBtn.Draggable = true -- Mobilon is húzhatod a gombot, ha zavar
+ToggleBtn.Parent = ScreenGui
+
+local ToggleCorner = Instance.new("UICorner")
+ToggleCorner.CornerRadius = UDim.new(1, 0) -- Teljesen kör alakú
+ToggleCorner.Parent = ToggleBtn
+
+-- Fő Keret (Main Frame)
+local MainFrame = Instance.new("Frame")
+MainFrame.Name = "MainFrame"
+MainFrame.Size = UDim2.new(0, 300, 0, 230)
+MainFrame.Position = UDim2.new(0.5, -150, 0.4, -115)
+MainFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+MainFrame.BorderSizePixel = 0
+MainFrame.Active = true
+MainFrame.Draggable = true
+MainFrame.Parent = ScreenGui
+
+local UICorner = Instance.new("UICorner")
+UICorner.CornerRadius = UDim.new(0, 10)
+UICorner.Parent = MainFrame
+
+-- Címsor (Title)
+local Title = Instance.new("TextLabel")
+Title.Size = UDim2.new(1, 0, 0, 40)
+Title.BackgroundColor3 = Color3.fromRGB(35, 35, 45)
+Title.Text = "Menu Panel"
+Title.TextColor3 = Color3.fromRGB(255, 255, 255)
+Title.TextSize = 18
+Title.Font = Enum.Font.FredokaOne
+Title.Parent = MainFrame
+
+local TitleCorner = Instance.new("UICorner")
+TitleCorner.CornerRadius = UDim.new(0, 10)
+TitleCorner.Parent = Title
+
+-- Bezárás gomb a menü tetején (X)
+local CloseBtn = Instance.new("TextButton")
+CloseBtn.Size = UDim2.new(0, 30, 0, 30)
+CloseBtn.Position = UDim2.new(1, -35, 0, 5)
+CloseBtn.BackgroundTransparency = 1
+CloseBtn.Text = "X"
+CloseBtn.TextColor3 = Color3.fromRGB(200, 50, 50)
+CloseBtn.TextSize = 18
+CloseBtn.Font = Enum.Font.FredokaOne
+CloseBtn.Parent = MainFrame
+
+-- 1. Gomb: Font Changer Ki/Be
+local FontBtn = Instance.new("TextButton")
+FontBtn.Size = UDim2.new(0.85, 0, 0, 40)
+FontBtn.Position = UDim2.new(0.075, 0, 0.25, 0)
+FontBtn.BackgroundColor3 = Color3.fromRGB(45, 120, 45)
+FontBtn.Text = "Font Changer: BE"
+FontBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+FontBtn.Font = Enum.Font.SourceSansBold
+FontBtn.TextSize = 16
+FontBtn.Parent = MainFrame
+
+local BtnCorner1 = Instance.new("UICorner")
+BtnCorner1.CornerRadius = UDim.new(0, 8)
+BtnCorner1.Parent = FontBtn
+
+-- 2. Gomb: Kliensoldali Visual Unlock Ki/Be
+local VisualBtn = Instance.new("TextButton")
+VisualBtn.Size = UDim2.new(0.85, 0, 0, 40)
+VisualBtn.Position = UDim2.new(0.075, 0, 0.50, 0)
+VisualBtn.BackgroundColor3 = Color3.fromRGB(150, 45, 45)
+VisualBtn.Text = "Visual Unlock (Client): KI"
+VisualBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+VisualBtn.Font = Enum.Font.SourceSansBold
+VisualBtn.TextSize = 16
+VisualBtn.Parent = MainFrame
+
+local BtnCorner2 = Instance.new("UICorner")
+BtnCorner2.CornerRadius = UDim.new(0, 8)
+BtnCorner2.Parent = VisualBtn
+
+--------------------------------------------------------------------------------
+-- 3. INTERAKCIÓK ÉS VEZÉRLÉS
+--------------------------------------------------------------------------------
+
+-- Menü megjelenítés / elrejtés váltó funkció
+local function toggleMenu()
+	MainFrame.Visible = not MainFrame.Visible
+end
+
+ToggleBtn.MouseButton1Click:Connect(toggleMenu)
+CloseBtn.MouseButton1Click:Connect(toggleMenu)
+
+-- Font Changer kapcsoló
+FontBtn.MouseButton1Click:Connect(function()
+	fontChangerActive = not fontChangerActive
+	if fontChangerActive then
+		FontBtn.Text = "Font Changer: BE"
+		FontBtn.BackgroundColor3 = Color3.fromRGB(45, 120, 45)
+		if LocalPlayer and LocalPlayer:FindFirstChild("PlayerGui") then
+			watchContainer(LocalPlayer.PlayerGui)
+		end
+	else
+		FontBtn.Text = "Font Changer: KI"
+		FontBtn.BackgroundColor3 = Color3.fromRGB(150, 45, 45)
+	end
+end)
+
+-- Visual Unlock kapcsoló
+VisualBtn.MouseButton1Click:Connect(function()
+	visualUnlockActive = not visualUnlockActive
+	if visualUnlockActive then
+		VisualBtn.Text = "Visual Unlock (Client): BE"
+		VisualBtn.BackgroundColor3 = Color3.fromRGB(45, 120, 45)
+	else
+		VisualBtn.Text = "Visual Unlock (Client): KI"
+		VisualBtn.BackgroundColor3 = Color3.fromRGB(150, 45, 45)
+	end
+end)
+
+-- PC-n maradt a Jobb Ctrl gomb is (ha esetleg PC-n is tesztelnéd)
+UserInputService.InputBegan:Connect(function(input, gameProcessed)
+	if not gameProcessed and input.KeyCode == Enum.KeyCode.RightControl then
+		toggleMenu()
+	end
+end)
+
+print("[Mobile Menu Loaded] A bal oldali kör alakú 'UI' gombbal tudod megnyitni a menüt!")
